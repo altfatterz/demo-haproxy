@@ -35,7 +35,7 @@ Create client certificate:
 ```
 openssl genrsa -out client.key 2048
 openssl req -new -key client.key -out client.csr
-openssl x509 -req -days 365 -in client.csr -CA haproxy.crt -CAkey haproxy.key -out client.crt
+openssl x509 -req -days 365 -in client.csr -CA server.crt -CAkey server.key -set_serial 01 -out client.crt
 
 # Convert Client Key to PKCS
 openssl pkcs12 -export -clcerts -in client.crt -inkey client.key -out client.p12
