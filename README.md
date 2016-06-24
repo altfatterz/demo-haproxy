@@ -1,10 +1,9 @@
 ```
 
-openssl genrsa -out haproxy.key 1024
-openssl req -new -key haproxy.key -out haproxy.csr
-openssl x509 -req -days 365 -in haproxy.csr -signkey haproxy.key -out haproxy.crt
-
-cat haproxy.crt haproxy.key | tee haproxy.pem
+openssl genrsa -out server.key 2048
+openssl req -new -key server.key -out server.csr
+openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
+cat server.crt server.key | tee server.pem
 
 haproxy -f haproxy.cfg
 ```
@@ -29,4 +28,15 @@ https://localhost:8443/
 
 ```
 curl --insecure https://localhost:8443
+```
+
+Create client certificate:
+
+```
+openssl genrsa -out client.key 2048
+openssl req -new -key client.key -out client.csr
+openssl x509 -req -days 365 -in client.csr -CA haproxy.crt -CAkey haproxy.key -out client.crt
+
+# Convert Client Key to PKCS
+openssl pkcs12 -export -clcerts -in client.crt -inkey client.key -out client.p12
 ```
