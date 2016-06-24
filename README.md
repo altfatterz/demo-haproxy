@@ -25,7 +25,9 @@ haproxy -f haproxy.cfg
 
 Verify that you can access the backend through HAProxy via http:
 
+```
 http://localhost:8081
+```
 
 Verify that you can access the backend through HAProxy via http:
 
