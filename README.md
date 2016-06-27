@@ -8,14 +8,27 @@ http://localhost:8080
 Now we would like to access this service through https via HAProxy which terminates the SSL connection calculates
 the client certificate fingerprint and passes it through the backend in a header `x-ssl-client-sha1`
 
-The `server.key`, `server.csr`, `server.crt` and `server.pem` where created following:
+
+Server certificate:
 
 ```
-openssl genrsa -out server.key 2048
-openssl req -new -key server.key -out server.csr
-openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
-cat server.crt server.key | tee server.pem
+openssl genrsa -out haproxy.key 2048
+openssl req -new -key haproxy.key -out haproxy.csr -subj '/C=NL/ST=Amsterdam/L=Amsterdam/O=GeriMedica/OU=R&D/CN=haproxy.gerimedica.nl'
+openssl req -in haproxy.csr -noout -text
+openssl x509 -req -days 365 -in haproxy.csr -signkey haproxy.key -out haproxy.crt
+cat haproxy.crt haproxy.key | tee haproxy.pem
 ```
+
+Client certificate:
+
+Create self signed certificate:
+```
+openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout client.key -out client.crt -subj '/C=NL/ST=Amsterdam/L=Amsterdam/O=TTS/OU=R&D/CN=www.tts.nl'
+// client.key and client.crt are created
+openssl x509 -in client.crt -text -noout
+```
+
+
 
 Start up the haproxy in the `haproxy` folder
 
@@ -34,15 +47,6 @@ Verify that you can access the backend through HAProxy via http:
 ```
 https://localhost:8443/
 
-```
-
-The SSL client certificate was created certificate with the following commands:
-
-```
-openssl genrsa -out client.key 2048
-openssl req -new -key client.key -out client.csr
-openssl x509 -req -days 365 -in client.csr -CA server.crt -CAkey server.key -set_serial 01 -out client.crt
-openssl pkcs12 -export -clcerts -in client.crt -inkey client.key -out client.p12
 ```
 
 
