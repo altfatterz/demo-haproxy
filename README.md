@@ -9,25 +9,25 @@ Now we would like to access this service through https via HAProxy which termina
 the client certificate fingerprint and passes it through the backend in a header `x-ssl-client-sha1`
 
 
+following: https://github.com/jkbrzt/httpie
+
 Server certificate:
 
+CA server certificate
 ```
-openssl genrsa -out haproxy.key 2048
-openssl req -new -key haproxy.key -out haproxy.csr -subj '/C=NL/ST=Amsterdam/L=Amsterdam/O=GeriMedica/OU=R&D/CN=haproxy.gerimedica.nl'
-openssl req -in haproxy.csr -noout -text
-openssl x509 -req -days 365 -in haproxy.csr -signkey haproxy.key -out haproxy.crt
-cat haproxy.crt haproxy.key | tee haproxy.pem
+openssl genrsa -out ca.key 2048
+openssl req -new -x509 -days 365 -key ca.key -out ca.crt -subj '/C=NL/ST=Amsterdam/L=Amsterdam/O=GeriMedica/OU=R&D/CN=localhost'
+cat ca.crt ca.key | tee ca.pem
 ```
 
 Client certificate:
 
-Create self signed certificate:
 ```
-openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout client.key -out client.crt -subj '/C=NL/ST=Amsterdam/L=Amsterdam/O=TTS/OU=R&D/CN=www.tts.nl'
-// client.key and client.crt are created
-openssl x509 -in client.crt -text -noout
+openssl genrsa -out client.key 2048
+openssl req -new -key client.key -out client.csr -subj '/C=NL/ST=Amsterdam/L=Amsterdam/O=TTS/OU=R&D/CN=tts'
+# self-signed
+openssl x509 -req -days 365 -in client.csr -CA ca.crt -CAkey ca.key -set_serial 01 -out client.crt
 ```
-
 
 
 Start up the haproxy in the `haproxy` folder
@@ -53,7 +53,7 @@ https://localhost:8443/
 My problem is that the `x-ssl-client-sha1` is set to empty string while running:
 
 ```
-$ http --verify=no --cert client.pem --cert-key=client.key https://localhost:8443
+$ http --verify=no --cert=client.crt --cert-key=client.key https://localhost:8443
 
 HTTP/1.1 200 OK
 Content-Type: application/json;charset=UTF-8
@@ -75,4 +75,10 @@ X-Application-Context: application
 }
 ```
 
-What am I doing wrong?
+
+```
+$ http --cert client.crt --cert-key=client.key https://localhost:8443
+
+http: error: SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed (_ssl.c:590) while doing GET request to URL: https://localhost:8443/
+```
+
